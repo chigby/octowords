@@ -85,8 +85,16 @@ proc main(filename: string, mode: Mode) =
   case mode
   of compare:
     var strm = newFileStream(markFile, fmRead)
+    if strm.isNil:
+      echo fmt"Could not load bookmark file {markFile}.  Run with --mark to create one."
+      return
+
     var r: Report
-    load(strm, r)
+    try:
+      load(strm, r)
+    except IOError:
+      echo fmt"De-serializing markfile failed"
+      return
 
     echo r.marked.format("yyyy-MM-dd HH:mm:ss")
     let q = initDuration(seconds = (now() - r.marked).inSeconds)
