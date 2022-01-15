@@ -1,6 +1,6 @@
 import os
 import parseopt, strformat, strutils
-import std/[sets, marshal, streams, times, tables, sequtils]
+import std/[sets, marshal, streams, times, tables]
 
 const helpText = """Usage: owc [options] [file]
 
@@ -29,12 +29,6 @@ type
   Report = ref object
     marked: DateTime
     locations: Table[string, Location]
-  Delta = distinct int
-
-
-
-proc print(l: Location) =
-  echo &"{l.id}: \n  words: {l.words}\n  storylets: {l.storylets}"
 
 
 func countWords(s: string): int =
