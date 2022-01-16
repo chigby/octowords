@@ -1,6 +1,6 @@
 import os
 import parseopt, strformat, strutils
-import std/[sets, marshal, streams, times, tables, sequtils]
+import std/[sets, marshal, streams, times, tables]
 
 const helpText = """Usage: owc [options] [file]
 
@@ -17,6 +17,7 @@ const
   textProperties = toHashSet(@["title:", "subtitle:"])
   locationToken: string = "###"
   storyletToken: string = "==="
+  textLineStarter = Letters + {',', '.', '?', '!', ';', '(', ')', '"', '&'}
 
 
 type
@@ -47,7 +48,7 @@ func applyLine(location: Location, line: string): Location =
     z = countWords(line[1..^1].split('>', maxsplit=1)[0])
   elif line.startsWith(storyletToken):
     inc location.storylets
-  elif Letters.contains(line[0]):
+  elif textLineStarter.contains(line[0]):
     let prefix = line[0..line.find(':')]
     if nonTextProperties.contains(prefix):
       z = 0
