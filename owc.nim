@@ -1,6 +1,6 @@
 import os
 import parseopt, strformat, strutils
-import std/[sets, marshal, streams, times, tables]
+import std/[sets, marshal, streams, times, tables, sequtils]
 
 const helpText = """Usage: owc [options] [file]
 
@@ -103,19 +103,34 @@ proc main(filename: string, mode: Mode) =
     var
       totalWords = 0
       totalStorylets = 0
+    echo r.locations.keys.toSeq.toHashSet
+    var old: Location
     for l in locations:
       echo fmt"{l.id}:"
-      let old = r.locations.getOrDefault(l.id, Location(id: l.id, words: 0, storylets: 0))
-      totalWords += l.words - old.words
-      totalStorylets += l.storylets - old.storylets
-      if old.words != l.words:
-        echo fmt"  words:     {old.words} --> {l.words} ({l.words - old.words:+})"
+      if r.locations.pop(l.id, old):
+        totalWords += l.words - old.words
+        totalStorylets += l.storylets - old.storylets
+        if old.words != l.words:
+          echo fmt"  words:     {old.words} --> {l.words} ({l.words - old.words:+})"
+        else:
+          echo fmt"  words:     {old.words}"
+        if old.storylets < l.storylets:
+            echo fmt"  storylets: {old.storylets} --> {l.storylets} ({l.storylets - old.storylets:+})"
+        else:
+          echo fmt"  storylets: {old.storylets}"
       else:
-        echo fmt"  words:     {old.words}"
-      if old.storylets < l.storylets:
-        echo fmt"  storylets: {old.storylets} --> {l.storylets} ({l.storylets - old.storylets:+})"
-      else:
-        echo fmt"  storylets: {old.storylets}"
+        totalWords += l.words
+        totalStorylets += l.storylets
+        echo fmt"  words:     0 --> {l.words} ({l.words:+})"
+        echo fmt"  storylets: 0 --> {l.storylets} ({l.storylets:+})"
+    # Locations that are in the old mark but not in the current file
+    for l in r.locations.values:
+      echo fmt"{l.id}:"
+      totalWords -= l.words
+      totalStorylets -= l.storylets
+      echo fmt"  words:     {l.words} --> 0 (-{l.words})"
+      echo fmt"  storylets: {l.storylets} --> 0 (-{l.storylets})"
+
 
     echo &"\ntotal:\n  words: {totalWords:>+10}\n  storylets: {totalStorylets:>+6}"
   of mark:
