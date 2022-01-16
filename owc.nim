@@ -104,7 +104,6 @@ proc main(filename: string, mode: Mode) =
     var
       totalWords = 0
       totalStorylets = 0
-    echo r.locations.keys.toSeq.toHashSet
     var old: Location
     for l in locations:
       echo fmt"{l.id}:"
