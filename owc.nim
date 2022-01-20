@@ -12,8 +12,10 @@ Options:
 
 const
   markFile = "owcmark.txt"
-  separators = Whitespace + {',', '.', '?', '"', ';', '!', '(', ')', '*', '[', ']', '|', '>', '-'}
-  nonTextProperties = toHashSet(@["visible-if:", "priority:", "frequency:", "min-choices:", "max-choices:", "max-visits:", "goto:", "game-over:"])
+  separators = Whitespace + {',', '.', '?', '"', ';', '!', '(', ')', '*', '[',
+      ']', '|', '>', '-'}
+  nonTextProperties = toHashSet(@["visible-if:", "priority:", "frequency:",
+      "min-choices:", "max-choices:", "max-visits:", "goto:", "game-over:"])
   textProperties = toHashSet(@["title:", "subtitle:"])
   locationToken: string = "###"
   storyletToken: string = "==="
@@ -45,7 +47,7 @@ func countWords(s: string): int =
 func applyLine(location: Location, line: string): Location =
   var z = 0
   if line[0] == '*':
-    z = countWords(line[1..^1].split('>', maxsplit=1)[0])
+    z = countWords(line[1..^1].split('>', maxsplit = 1)[0])
   elif line.startsWith(storyletToken):
     inc location.storylets
   elif textLineStarter.contains(line[0]):
@@ -53,11 +55,11 @@ func applyLine(location: Location, line: string): Location =
     if nonTextProperties.contains(prefix):
       z = 0
     elif textProperties.contains(prefix):
-      z = countWords(line.split(':', maxsplit=1)[1])
+      z = countWords(line.split(':', maxsplit = 1)[1])
     else:
       z = countWords(line)
   else:
-      z = 0
+    z = 0
   if z > 0:
     location.words += z
   location
@@ -115,7 +117,7 @@ proc main(filename: string, mode: Mode) =
         else:
           echo fmt"  words:     {old.words}"
         if old.storylets < l.storylets:
-            echo fmt"  storylets: {old.storylets} --> {l.storylets} ({l.storylets - old.storylets:+})"
+          echo fmt"  storylets: {old.storylets} --> {l.storylets} ({l.storylets - old.storylets:+})"
         else:
           echo fmt"  storylets: {old.storylets}"
       else:
