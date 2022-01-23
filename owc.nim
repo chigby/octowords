@@ -7,10 +7,13 @@ const helpText = """Usage: owc [options] [file]
 Options:
 
   -m, --mark          : Mark wordcount progress
-  --help              : Output this help message"""
+  --help              : Output this help message
+  --version           : Output software version
+"""
 
 
 const
+  versionText = "0.0.2"
   markFile = "owcmark.txt"
   separators = Whitespace + {',', '.', '?', '"', ';', '!', '(', ')', '*', '[',
       ']', '|', '>', '-'}
@@ -24,8 +27,13 @@ const
 
 type
   Mode = enum
-    compare,
-    mark
+    help,
+    version,
+    error,
+    run
+  Operation = enum
+    opCompare,
+    opMark
   Location = ref object
     storylets, words: int
     id: string
@@ -65,7 +73,7 @@ func applyLine(location: Location, line: string): Location =
   location
 
 
-proc main(filename: string, mode: Mode) =
+proc main(filename: string, operation: Operation) =
   var locations: seq[Location] = @[]
 
   for line in filename.lines:
@@ -85,8 +93,8 @@ proc main(filename: string, mode: Mode) =
     else:
       discard locations[^1].applyLine(line)
 
-  case mode
-  of compare:
+  case operation
+  of opCompare:
     var strm = newFileStream(markFile, fmRead)
     if strm.isNil:
       echo fmt"Could not load bookmark file {markFile}.  Run with --mark to create one."
@@ -135,7 +143,7 @@ proc main(filename: string, mode: Mode) =
 
 
     echo &"\ntotal:\n  words: {totalWords:>+10}\n  storylets: {totalStorylets:>+6}"
-  of mark:
+  of opMark:
     var strm = newFileStream(markFile, fmWrite)
 
     # let locTable = foldl(locations, a[b.id] = b, initTable[string, Location]())
@@ -149,10 +157,10 @@ proc main(filename: string, mode: Mode) =
 
 
 when isMainModule:
-  var p = initOptParser(shortNoVal = {'h', 'm'}, longNoVal = @["help", "mark"])
+  var p = initOptParser(shortNoVal = {'h', 'm'}, longNoVal = @["help", "mark", "version"])
   var filename: string
-  var mode: Mode = compare
-  var error: bool = false
+  var operation = opCompare
+  var mode = run
 
   for kind, key, val in p.getOpt():
     case kind
@@ -161,18 +169,23 @@ when isMainModule:
     else:
       case key:
         of "m", "mark":
-          mode = mark
+          operation = opMark
         of "help":
-          echo helpText
+          mode = help
+        of "version":
+          mode = version
         else:
           echo fmt"I don't understand option {key}!"
-          error = true
-  if error:
+          mode = error
+  case mode
+  of error, help:
     echo helpText
-  elif filename == "":
-    echo "No filename given\n"
-    echo helpText
-  elif fileExists(filename):
-    main(filename, mode)
-  else:
-    echo fmt"File {filename} not found!"
+  of version:
+    echo versionText
+  of run:
+    if filename == "":
+      echo "No filename given"
+    elif not fileExists(filename):
+      echo fmt"File {filename} not found!"
+    else:
+      main(filename, operation)
