@@ -33,7 +33,8 @@ type
     run
   Operation = enum
     opCompare,
-    opMark
+    opMark,
+    opShow
   Location = ref object
     storylets, words: int
     id: string
@@ -94,6 +95,19 @@ proc main(filename: string, operation: Operation) =
       discard locations[^1].applyLine(line)
 
   case operation
+  of opShow:
+    var
+      totalWords = 0
+      totalStorylets = 0
+    for l in locations:
+      echo fmt"{l.id}"
+      echo fmt"  words: {l.words}"
+      echo fmt"  storylets: {l.storylets}"
+      totalWords += l.words
+      totalStorylets += l.storylets
+    echo &"\ntotal words: {totalWords}"
+    echo fmt"total storylets: {totalStorylets}"
+
   of opCompare:
     var strm = newFileStream(markFile, fmRead)
     if strm.isNil:
@@ -159,7 +173,7 @@ proc main(filename: string, operation: Operation) =
 when isMainModule:
   var p = initOptParser(shortNoVal = {'h', 'm'}, longNoVal = @["help", "mark", "version"])
   var filename: string
-  var operation = opCompare
+  var operation = if fileExists(markFile): opCompare else: opShow
   var mode = run
 
   for kind, key, val in p.getOpt():
