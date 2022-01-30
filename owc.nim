@@ -31,10 +31,6 @@ type
     version,
     error,
     run
-  Operation = enum
-    opCompare,
-    opMark,
-    opShow
   Location = ref object
     storylets, words: int
     id: string
@@ -74,7 +70,7 @@ func applyLine(location: Location, line: string): Location =
   location
 
 
-proc main(filename: string, operation: Operation) =
+proc main(filename: string, mark: bool) =
   var locations: seq[Location] = @[]
 
   for line in filename.lines:
@@ -94,8 +90,7 @@ proc main(filename: string, operation: Operation) =
     else:
       discard locations[^1].applyLine(line)
 
-  case operation
-  of opShow:
+  if not fileExists(markFile):
     var
       totalWords = 0
       totalStorylets = 0
@@ -108,7 +103,7 @@ proc main(filename: string, operation: Operation) =
     echo &"\ntotal words: {totalWords}"
     echo fmt"total storylets: {totalStorylets}"
 
-  of opCompare:
+  else:
     var strm = newFileStream(markFile, fmRead)
     if strm.isNil:
       echo fmt"Could not load bookmark file {markFile}.  Run with --mark to create one."
@@ -157,7 +152,8 @@ proc main(filename: string, operation: Operation) =
 
 
     echo &"\ntotal:\n  words: {totalWords:>+10}\n  storylets: {totalStorylets:>+6}"
-  of opMark:
+
+  if mark:
     var strm = newFileStream(markFile, fmWrite)
 
     # let locTable = foldl(locations, a[b.id] = b, initTable[string, Location]())
@@ -173,8 +169,8 @@ proc main(filename: string, operation: Operation) =
 when isMainModule:
   var p = initOptParser(shortNoVal = {'h', 'm'}, longNoVal = @["help", "mark", "version"])
   var filename: string
-  var operation = if fileExists(markFile): opCompare else: opShow
   var mode = run
+  var mark = false
 
   for kind, key, val in p.getOpt():
     case kind
@@ -183,7 +179,7 @@ when isMainModule:
     else:
       case key:
         of "m", "mark":
-          operation = opMark
+          mark = true
         of "help":
           mode = help
         of "version":
@@ -205,4 +201,4 @@ when isMainModule:
     elif not fileExists(filename):
       echo fmt"File {filename} not found!"
     else:
-      main(filename, operation)
+      main(filename, mark)
