@@ -189,7 +189,10 @@ when isMainModule:
         of "version":
           mode = version
         else:
-          echo fmt"I don't understand option {key}!"
+          let prefix = if kind == cmdShortOption: "-"
+                       elif kind == cmdLongOption: "--"
+                       else: ""
+          echo fmt"I don't understand option '{prefix}{key}'"
           mode = error
   case mode
   of error, help:
