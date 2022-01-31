@@ -31,9 +31,6 @@ type
     version,
     error,
     run
-  Operation = enum
-    opCompare,
-    opMark
   Location = ref object
     storylets, words: int
     id: string
@@ -73,7 +70,7 @@ func applyLine(location: Location, line: string): Location =
   location
 
 
-proc main(filename: string, operation: Operation) =
+proc main(filename: string, mark: bool) =
   var locations: seq[Location] = @[]
 
   for line in filename.lines:
@@ -93,8 +90,20 @@ proc main(filename: string, operation: Operation) =
     else:
       discard locations[^1].applyLine(line)
 
-  case operation
-  of opCompare:
+  if not fileExists(markFile):
+    var
+      totalWords = 0
+      totalStorylets = 0
+    for l in locations:
+      echo fmt"{l.id}"
+      echo fmt"  words: {l.words}"
+      echo fmt"  storylets: {l.storylets}"
+      totalWords += l.words
+      totalStorylets += l.storylets
+    echo &"\ntotal words: {totalWords}"
+    echo fmt"total storylets: {totalStorylets}"
+
+  else:
     var strm = newFileStream(markFile, fmRead)
     if strm.isNil:
       echo fmt"Could not load bookmark file {markFile}.  Run with --mark to create one."
@@ -143,7 +152,8 @@ proc main(filename: string, operation: Operation) =
 
 
     echo &"\ntotal:\n  words: {totalWords:>+10}\n  storylets: {totalStorylets:>+6}"
-  of opMark:
+
+  if mark:
     var strm = newFileStream(markFile, fmWrite)
 
     # let locTable = foldl(locations, a[b.id] = b, initTable[string, Location]())
@@ -159,8 +169,8 @@ proc main(filename: string, operation: Operation) =
 when isMainModule:
   var p = initOptParser(shortNoVal = {'h', 'm'}, longNoVal = @["help", "mark", "version"])
   var filename: string
-  var operation = opCompare
   var mode = run
+  var mark = false
 
   for kind, key, val in p.getOpt():
     case kind
@@ -169,13 +179,16 @@ when isMainModule:
     else:
       case key:
         of "m", "mark":
-          operation = opMark
+          mark = true
         of "help":
           mode = help
         of "version":
           mode = version
         else:
-          echo fmt"I don't understand option {key}!"
+          let prefix = if kind == cmdShortOption: "-"
+                       elif kind == cmdLongOption: "--"
+                       else: ""
+          echo fmt"I don't understand option '{prefix}{key}'"
           mode = error
   case mode
   of error, help:
@@ -188,4 +201,4 @@ when isMainModule:
     elif not fileExists(filename):
       echo fmt"File {filename} not found!"
     else:
-      main(filename, operation)
+      main(filename, mark)
